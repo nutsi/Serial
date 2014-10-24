@@ -57,7 +57,7 @@ irqreturn_t handle_uart_irq(int irq, void *devinfo)
   return IRQ_HANDLED;
 }
 
-int serial_device_ioctl(struct inode *inode, struct file *file, /* ditto */
+int serial_device_ioctl(struct inode *inode, struct file *file,
     unsigned int ioctl_num, unsigned long ioctl_param)
 {
   switch (ioctl_num) {
@@ -74,8 +74,6 @@ ssize_t serial_dev_read(struct file *file, char *buf, size_t len, loff_t *pos)
     unsigned char d;
     u8 lsr = inb(UART_LSR);
 
-    if ((lsr & 0x01) == 0)
-      return -1;
     while (i < len) {
 
       d = inb(UART_RBR);
@@ -84,8 +82,6 @@ ssize_t serial_dev_read(struct file *file, char *buf, size_t len, loff_t *pos)
         return -EFAULT;
       }
       lsr = inb(UART_LSR);
-      if ((lsr & 0x01) == 0)
-        return -1;
       i++;
     }
     return i;
@@ -131,11 +127,6 @@ static int __init   init_driver(void)
   outb(0x03, UART_LCR); // 8 bits word
   outb(0x03, UART_MCR);
 
-  inb(UART_MSR);
-  inb(UART_LSR);
-  inb(UART_RBR);
-  inb(UART_IIR);
-
   if ((ret = request_irq(4, handle_uart_irq, IRQF_SHARED, module_name, &module_name)) < 0) {
     return ret;
   }
@@ -169,9 +160,6 @@ static int __init   init_driver(void)
     unregister_chrdev_region(dev, 1);
     return -1;
   }
-
-  //  ret = register_chrdev(UART_MOD_MAJOR, module_name, &fops);
-  //  s
   printk(KERN_INFO "serial: Driver loaded.\n");
   return ret;
 
